@@ -3,7 +3,7 @@ import cv2
 from utils import *
 
 feature_params = dict(maxCorners=100,
-                      qualityLevel=0.3,
+                      qualityLevel=0.5,
                       minDistance=7,
                       blockSize=7)
 lk_params = dict(winSize=(15, 15),
@@ -21,17 +21,21 @@ while cap.isOpened():  # run on the video
         start_flag = False
         old_gray = gray.copy()
         continue
-    p0 = cv2.goodFeaturesToTrack(old_gray, mask=None, **feature_params)
+    p0 = cv2.goodFeaturesToTrack(old_gray, mask=None, **feature_params)  # find good features
     p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, gray, p0, None,
                                            **lk_params)  # calculate the optical flow new location
     changing_inside_frames = mean_frame_changing(p0, p1, st)  # find the mean change between frames
-
+    old_gray = gray.copy()
+    if cv2.waitKey(1) & 0xFF == ord('w'):
+        show_frame_diff(old_gray, gray, p0, p1, st)
+    text = "the frame diff is: " + str(changing_inside_frames)
+    cv2.putText(gray, text, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 255, 255))
     changing_between_frames.append(changing_inside_frames)
     cv2.imshow('frame', gray)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-    old_gray = gray.copy()
-mean_chang_between_frames=np.array(changing_between_frames).mean()
-print(mean_chang_between_frames)
+
+
+mean_chang_between_frames = np.array(changing_between_frames).mean()
 cap.release()
 cv2.destroyAllWindows()
